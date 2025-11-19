@@ -1,0 +1,30 @@
+name: Database Tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'supabase/**'
+
+jobs:
+  test-db:
+    name: Run pgTAP Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Run Database Tests
+        run: supabase test db
