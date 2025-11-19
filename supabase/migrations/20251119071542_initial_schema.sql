@@ -29,7 +29,7 @@ create policy "Users can update own profile"
 
 -- Create notes table
 create table public.notes (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   title text not null default 'Untitled',
   content jsonb default '{"type":"doc","content":[{"type":"paragraph"}]}'::jsonb,
   owner_id uuid references public.profiles(id) on delete cascade not null,
@@ -64,7 +64,7 @@ create policy "Users can delete their own notes"
 
 -- Create collaborators table (for sharing)
 create table public.collaborators (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   note_id uuid references public.notes(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
   role text check (role in ('view', 'edit')) default 'view',
