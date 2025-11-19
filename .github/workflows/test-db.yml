@@ -24,7 +24,7 @@ jobs:
           version: latest
 
       - name: Start Supabase
-        run: supabase start
+        run: supabase start -x studio,imgproxy,logflare,realtime,storage,edge-functions
 
       - name: Run Database Tests
         run: supabase test db
