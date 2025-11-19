@@ -45,7 +45,6 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const [content, setContent] = useState(initialNote.content || '')
   const [saving, setSaving] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([])
-  const [imageUrl, setImageUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [summarizing, setSummarizing] = useState(false)
   const router = useRouter()
@@ -179,12 +178,18 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       .from('note-images')
       .upload(fileName, file)
 
+    if (error) {
+      console.error('Error uploading image:', error)
+      alert('Failed to upload image')
+      setUploading(false)
+      return
+    }
+
     if (data) {
       const { data: { publicUrl } } = supabase.storage
         .from('note-images')
         .getPublicUrl(data.path)
 
-      setImageUrl(publicUrl)
       setContent((prev) => prev + `\n\n![Image](${publicUrl})\n`)
       saveNote()
     }
@@ -209,6 +214,23 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       alert('Failed to summarize note. Make sure the function is deployed/serving.')
     } finally {
       setSummarizing(false)
+    }
+  }
+
+  const handleGenerateEmbedding = async () => {
+    const confirmed = await confirm({
+      title: 'Generate Embedding',
+      message: 'Generate embedding for this note? This will enable semantic search.',
+      confirmText: 'Generate',
+      variant: 'info'
+    })
+
+    if (confirmed) {
+      const { error } = await supabase.functions.invoke('generate-embedding', {
+        body: { noteId: note.id, content: content },
+      })
+      if (error) alert('Failed to index note')
+      else alert('Note indexed successfully!')
     }
   }
 
@@ -271,22 +293,7 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                   <Sparkles className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={async () => {
-                    const confirmed = await confirm({
-                      title: 'Generate Embedding',
-                      message: 'Generate embedding for this note? This will enable semantic search.',
-                      confirmText: 'Generate',
-                      variant: 'info'
-                    })
-
-                    if (confirmed) {
-                      const { data, error } = await supabase.functions.invoke('generate-embedding', {
-                        body: { noteId: note.id, content: content },
-                      })
-                      if (error) alert('Failed to index note')
-                      else alert('Note indexed successfully!')
-                    }
-                  }}
+                  onClick={handleGenerateEmbedding}
                   className="p-2 text-gray-500 hover:bg-white hover:text-blue-600 rounded-md transition"
                   title="Index for Search"
                 >

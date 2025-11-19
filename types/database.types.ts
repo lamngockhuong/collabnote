@@ -90,7 +90,7 @@ export interface Database {
         Returns: {
           id: string
           title: string
-          content: any
+          content: string | null
           similarity: number
         }[]
       }

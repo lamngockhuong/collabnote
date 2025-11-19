@@ -9,10 +9,11 @@ import { PlusCircle, FileText, LogOut, Search, User as UserIcon } from 'lucide-r
 interface Note {
   id: string
   title: string
-  content: any
+  content: unknown
   created_at: string
   updated_at: string
   is_public: boolean
+  similarity?: number
 }
 
 interface Props {
@@ -90,7 +91,7 @@ export default function DashboardClient({ initialNotes, user }: Props) {
   )
 
   const [isSearching, setIsSearching] = useState(false)
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<Note[]>([])
 
   const handleSemanticSearch = async () => {
     if (!searchQuery) return

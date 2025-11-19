@@ -6,9 +6,14 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { ArrowLeft, Database } from 'lucide-react'
 
+interface ProfileNode {
+  username: string
+  avatar_url: string
+}
+
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
-  const [profileData, setProfileData] = useState<any>(null)
+  const [profileData, setProfileData] = useState<ProfileNode | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -21,7 +26,7 @@ export default function ProfilePage() {
         // Fetch profile using GraphQL
         // Note: In a real app, you might use a proper GraphQL client like Apollo or urql
         try {
-          const { data, error } = await supabase.functions.invoke('graphql-proxy', {
+          await supabase.functions.invoke('graphql-proxy', {
              body: {
                 query: `
                   query {
@@ -68,7 +73,7 @@ export default function ProfilePage() {
 
           const result = await response.json()
           if (result.data?.profilesCollection?.edges?.[0]?.node) {
-            setProfileData(result.data.profilesCollection.edges[0].node)
+            setProfileData(result.data.profilesCollection.edges[0].node as ProfileNode)
           }
         } catch (e) {
           console.error('GraphQL fetch error:', e)

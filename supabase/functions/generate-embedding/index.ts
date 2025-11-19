@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { noteId, content } = await req.json()
+    const { noteId } = await req.json()
 
     if (!noteId) throw new Error('noteId is required')
 
