@@ -90,68 +90,70 @@ This project is a **learning reference** to demonstrate every core Supabase feat
 
 **Files**: `supabase/vector-search.sql`
 
-### 8. **Scheduled Tasks (pg_cron)** ⏰
-- ✅ Automated note archiving
-- ✅ Database-level cron jobs
+### 9. **Database Webhooks** 🪝
+- ✅ Trigger external services on DB changes
+- ✅ HTTP callbacks
+- ✅ Payload security
 
-**Files**: `supabase/cron-jobs.sql`
+**Files**: `supabase/migrations/20251119081238_setup_webhook_trigger.sql`
+
+### 10. **GraphQL (pg_graphql)** 🕸️
+- ✅ Query database via GraphQL
+- ✅ Auto-generated schema
+- ✅ Integrated with RLS
+
+**Files**: `docs/features_and_verification.md` (usage examples)
+
+### 11. **Automated Tests** 🧪
+- ✅ Integration Tests (RLS verification)
+- ✅ Unit Tests (pgTAP database tests)
+- ✅ CI/CD ready
+
+**Files**: `scripts/test-rls.ts`, `supabase/tests/database/`
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - A Supabase account ([supabase.com](https://supabase.com))
+- Supabase CLI (optional, for local dev)
 
 ### 1. Clone and Install
 
 ```bash
-git clone <your-repo>
+git clone https://github.com/lamngockhuong/collabnote.git
 cd collabnote
 pnpm install
 ```
 
-### 2. Setup Supabase Project
+### 2. Setup Environment
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Copy your project URL and anon key
-3. Create `.env.local`:
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env.local
+   ```
 
+2. Update `.env.local` with your Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ```
+
+### 3. Setup Database
+
+You can either use the Supabase CLI (recommended) or the Dashboard.
+
+**Option A: Supabase CLI (Local Dev)**
 ```bash
-cp .env.example .env.local
+supabase start
+supabase db reset
 ```
 
-Edit `.env.local`:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
+**Option B: Supabase Dashboard (Cloud)**
+Go to SQL Editor and run the migrations from `supabase/migrations/` in order.
 
-### 3. Run Database Migrations
-
-Go to your Supabase Dashboard → SQL Editor and run these files in order:
-
-1. `supabase/schema.sql` - Core tables and RLS
-2. `supabase/vector-search.sql` - Vector search (optional)
-3. `supabase/cron-jobs.sql` - Scheduled tasks (optional)
-
-### 4. Enable Realtime
-
-Dashboard → Database → Replication → Enable for `notes` table
-
-### 5. Setup Storage
-
-Dashboard → Storage → Create bucket `note-images` (Public)
-
-Then run the storage policies from `supabase/README.md`
-
-### 6. Configure OAuth (Optional)
-
-Dashboard → Authentication → Providers → Enable GitHub/Google
-
-Add redirect URL: `http://localhost:3000/auth/callback`
-
-### 7. Run the App
+### 4. Run the App
 
 ```bash
 pnpm dev
@@ -170,66 +172,25 @@ Open [http://localhost:3000](http://localhost:3000)
 │   ├── note/[id]/               # Note editor
 │   └── auth/callback/           # OAuth callback
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts            # Browser client
-│   │   ├── server.ts            # Server client
-│   │   └── middleware.ts        # Auth middleware
+│   ├── supabase/                # Supabase clients
+│   ├── use-confirm.tsx          # Custom confirm hook
 │   └── utils.ts                 # Utilities
 ├── supabase/
-│   ├── schema.sql               # Database schema
-│   ├── vector-search.sql        # Vector search setup
-│   ├── cron-jobs.sql            # Scheduled tasks
-│   └── functions/               # Edge Functions
-└── middleware.ts                # Next.js middleware
+│   ├── migrations/              # Database migrations
+│   ├── functions/               # Edge Functions
+│   └── tests/                   # pgTAP tests
+├── scripts/                     # Utility scripts
+└── docs/                        # Documentation
 ```
-
-## 🎓 Learning Path
-
-Follow this order to understand the codebase:
-
-1. **Auth Flow**: `app/login/` → `middleware.ts` → `lib/supabase/`
-2. **Database**: `supabase/schema.sql` (understand RLS policies)
-3. **Realtime**: `app/dashboard/dashboard-client.tsx` (subscriptions)
-4. **Storage**: `app/note/[id]/note-editor.tsx` (image upload)
-5. **Edge Functions**: `supabase/functions/summarize-note/`
-
-## 🔥 Key Features to Try
-
-1. **Realtime Collaboration**: Open the same note in two browsers
-2. **Presence**: See who's online in a note
-3. **Image Upload**: Drag and drop images
-4. **Public Notes**: Toggle note visibility
-5. **Auto-save**: Type and watch it save automatically
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS
-- **Backend**: Supabase (PostgreSQL, Auth, Realtime, Storage, Edge Functions)
-- **Icons**: Lucide React
-- **State**: Zustand (minimal usage, mostly Supabase Realtime)
-
-## 📚 Documentation
-
-For more detailed information about the project architecture, features, and verification steps, please refer to the `docs/` directory:
-
-- [**Architecture & Implementation Plan**](docs/architecture.md): Detailed breakdown of the project structure, database schema, and implementation phases.
-- [**Features & Verification**](docs/features_and_verification.md): Comprehensive list of implemented features and verification results (including screenshots).
-- [**Setup Guide**](SETUP.md): Step-by-step instructions to get the project running locally.
-
-## 📚 Resources
-
-- [Supabase Docs](https://supabase.com/docs)
-- [Next.js Docs](https://nextjs.org/docs)
-- [Supabase + Next.js Guide](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
 
 ## 🤝 Contributing
 
-This is a learning project. Feel free to fork and experiment!
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and suggest features.
 
 ## 📝 License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with ❤️ to learn Supabase**
+**Built with ❤️ by Lam Ngoc Khuong**
