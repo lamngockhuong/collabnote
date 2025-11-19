@@ -1,36 +1,210 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CollabNote - Supabase Feature Showcase
 
-## Getting Started
+A comprehensive collaborative note-taking application demonstrating **all major features** of Supabase with Next.js 14.
 
-First, run the development server:
+![CollabNote](https://img.shields.io/badge/Next.js-14-black) ![Supabase](https://img.shields.io/badge/Supabase-Full--Stack-green) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+
+## 🎯 Purpose
+
+This project is a **learning reference** to demonstrate every core Supabase feature in a real-world application. Perfect for developers who want to understand how to build production-ready apps with Supabase.
+
+## ✨ Supabase Features Demonstrated
+
+### 1. **Authentication** 🔐
+- ✅ Email/Password authentication
+- ✅ OAuth (GitHub, Google)
+- ✅ Session management with middleware
+- ✅ Protected routes
+- ✅ Auto-profile creation on signup
+
+**Files**: `app/login/`, `app/signup/`, `middleware.ts`
+
+### 2. **Database (PostgreSQL)** 🗄️
+- ✅ Relational schema design
+- ✅ Foreign keys and relationships
+- ✅ Triggers for auto-updates
+- ✅ JSONB for flexible content storage
+
+**Files**: `supabase/schema.sql`
+
+### 3. **Row Level Security (RLS)** 🛡️
+- ✅ User-specific data access
+- ✅ Shared note permissions
+- ✅ Public/private note visibility
+- ✅ Collaborator-based access control
+
+**Files**: `supabase/schema.sql` (policies section)
+
+### 4. **Realtime** ⚡
+- ✅ Live note updates (Postgres Changes)
+- ✅ Presence (see who's online)
+- ✅ Broadcast (future: cursor positions)
+- ✅ Channel subscriptions
+
+**Files**: `app/dashboard/dashboard-client.tsx`, `app/note/[id]/note-editor.tsx`
+
+### 5. **Storage** 📁
+- ✅ Image uploads
+- ✅ Public bucket configuration
+- ✅ RLS policies for storage
+- ✅ File serving via CDN
+
+**Files**: `app/note/[id]/note-editor.tsx` (image upload), `supabase/README.md` (storage policies)
+
+### 6. **Edge Functions** 🚀
+- ✅ Serverless Deno runtime
+- ✅ AI summarization endpoint
+- ✅ Secure API with auth headers
+
+**Files**: `supabase/functions/summarize-note/index.ts`
+
+### 7. **Vector Search (pgvector)** 🤖
+- ✅ Semantic search setup
+- ✅ Embedding storage
+- ✅ Similarity queries
+
+**Files**: `supabase/vector-search.sql`
+
+### 8. **Scheduled Tasks (pg_cron)** ⏰
+- ✅ Automated note archiving
+- ✅ Database-level cron jobs
+
+**Files**: `supabase/cron-jobs.sql`
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- A Supabase account ([supabase.com](https://supabase.com))
+
+### 1. Clone and Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo>
+cd collabnote
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Setup Supabase Project
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Copy your project URL and anon key
+3. Create `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+Edit `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run Database Migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Go to your Supabase Dashboard → SQL Editor and run these files in order:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. `supabase/schema.sql` - Core tables and RLS
+2. `supabase/vector-search.sql` - Vector search (optional)
+3. `supabase/cron-jobs.sql` - Scheduled tasks (optional)
 
-## Deploy on Vercel
+### 4. Enable Realtime
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Dashboard → Database → Replication → Enable for `notes` table
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 5. Setup Storage
+
+Dashboard → Storage → Create bucket `note-images` (Public)
+
+Then run the storage policies from `supabase/README.md`
+
+### 6. Configure OAuth (Optional)
+
+Dashboard → Authentication → Providers → Enable GitHub/Google
+
+Add redirect URL: `http://localhost:3000/auth/callback`
+
+### 7. Run the App
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── page.tsx                 # Landing page
+│   ├── login/                   # Login page
+│   ├── signup/                  # Signup page
+│   ├── dashboard/               # Notes dashboard
+│   ├── note/[id]/               # Note editor
+│   └── auth/callback/           # OAuth callback
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts            # Browser client
+│   │   ├── server.ts            # Server client
+│   │   └── middleware.ts        # Auth middleware
+│   └── utils.ts                 # Utilities
+├── supabase/
+│   ├── schema.sql               # Database schema
+│   ├── vector-search.sql        # Vector search setup
+│   ├── cron-jobs.sql            # Scheduled tasks
+│   └── functions/               # Edge Functions
+└── middleware.ts                # Next.js middleware
+```
+
+## 🎓 Learning Path
+
+Follow this order to understand the codebase:
+
+1. **Auth Flow**: `app/login/` → `middleware.ts` → `lib/supabase/`
+2. **Database**: `supabase/schema.sql` (understand RLS policies)
+3. **Realtime**: `app/dashboard/dashboard-client.tsx` (subscriptions)
+4. **Storage**: `app/note/[id]/note-editor.tsx` (image upload)
+5. **Edge Functions**: `supabase/functions/summarize-note/`
+
+## 🔥 Key Features to Try
+
+1. **Realtime Collaboration**: Open the same note in two browsers
+2. **Presence**: See who's online in a note
+3. **Image Upload**: Drag and drop images
+4. **Public Notes**: Toggle note visibility
+5. **Auto-save**: Type and watch it save automatically
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, TailwindCSS
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime, Storage, Edge Functions)
+- **Icons**: Lucide React
+- **State**: Zustand (minimal usage, mostly Supabase Realtime)
+
+## 📚 Documentation
+
+For more detailed information about the project architecture, features, and verification steps, please refer to the `docs/` directory:
+
+- [**Architecture & Implementation Plan**](docs/architecture.md): Detailed breakdown of the project structure, database schema, and implementation phases.
+- [**Features & Verification**](docs/features_and_verification.md): Comprehensive list of implemented features and verification results (including screenshots).
+- [**Setup Guide**](SETUP.md): Step-by-step instructions to get the project running locally.
+
+## 📚 Resources
+
+- [Supabase Docs](https://supabase.com/docs)
+- [Next.js Docs](https://nextjs.org/docs)
+- [Supabase + Next.js Guide](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)
+
+## 🤝 Contributing
+
+This is a learning project. Feel free to fork and experiment!
+
+## 📝 License
+
+MIT
+
+---
+
+**Built with ❤️ to learn Supabase**
