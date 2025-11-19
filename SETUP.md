@@ -5,7 +5,7 @@
 Your CollabNote application is ready with all Supabase features:
 
 ### Core Files
-- ✅ Next.js 14 app with App Router
+- ✅ Next.js 16 app with App Router
 - ✅ Supabase client configuration (browser & server)
 - ✅ Authentication pages (Login/Signup with OAuth)
 - ✅ Dashboard with realtime note list

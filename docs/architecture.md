@@ -5,7 +5,7 @@ Build **CollabNote**, a realtime collaborative note-taking application using **N
 
 ## User Review Required
 > [!IMPORTANT]
-> This plan assumes we are using the hosted Supabase platform (or a local equivalent) and Next.js 14+.
+> This plan assumes we are using the hosted Supabase platform (or a local equivalent) and Next.js 16+.
 
 ## Tech Stack
 - **Frontend**: Next.js (App Router), TypeScript, TailwindCSS, Lucide React.

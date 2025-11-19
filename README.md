@@ -29,6 +29,10 @@ CollabNote is a **production-ready** collaborative note-taking application that 
 - 📱 **PWA Ready** - Installable as a progressive web app
 - 🚀 **SEO Optimized** - Full metadata, sitemap, and structured data
 
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16 (App Router), TypeScript, TailwindCSS
+
 ## 🎯 Purpose
 
 This project is a **learning reference** to demonstrate every core Supabase feature in a real-world application. Perfect for developers who want to understand how to build production-ready apps with Supabase.
@@ -114,7 +118,7 @@ This project is a **learning reference** to demonstrate every core Supabase feat
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - A Supabase account ([supabase.com](https://supabase.com))
 - Supabase CLI (optional, for local dev)
 
