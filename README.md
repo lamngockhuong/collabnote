@@ -1,8 +1,33 @@
-# CollabNote - Supabase Feature Showcase
+# CollabNote - Realtime Collaborative Note Taking 📝
 
-A comprehensive collaborative note-taking application demonstrating **all major features** of Supabase with Next.js 14.
+<div align="center">
 
-![CollabNote](https://img.shields.io/badge/Next.js-14-black) ![Supabase](https://img.shields.io/badge/Supabase-Full--Stack-green) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)
+![Supabase](https://img.shields.io/badge/Supabase-Full--Stack-3ECF8E?style=for-the-badge&logo=supabase)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+
+**A powerful realtime collaborative note-taking app showcasing the complete Supabase ecosystem**
+
+[Live Demo](#) • [Documentation](./docs/) • [Report Bug](https://github.com/lamngockhuong/collabnote/issues) • [Request Feature](https://github.com/lamngockhuong/collabnote/issues)
+
+</div>
+
+---
+
+## 🎯 About The Project
+
+CollabNote is a **production-ready** collaborative note-taking application that demonstrates **every major feature** of Supabase integrated with Next.js. Built as a comprehensive learning resource and reference implementation for developers.
+
+### ✨ Key Highlights
+
+- 🔄 **Realtime Collaboration** - See changes instantly as others edit
+- 🤖 **AI-Powered** - Automatic summaries and semantic search
+- 🔒 **Secure** - Row Level Security with automated tests
+- 🎨 **Beautiful UI** - Modern, responsive design with Tailwind CSS
+- 📱 **PWA Ready** - Installable as a progressive web app
+- 🚀 **SEO Optimized** - Full metadata, sitemap, and structured data
 
 ## 🎯 Purpose
 
