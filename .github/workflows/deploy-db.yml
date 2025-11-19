@@ -11,6 +11,7 @@ jobs:
   deploy-db:
     name: Push Migrations to Production
     runs-on: ubuntu-latest
+    environment: Production
 
     steps:
       - name: Checkout code
