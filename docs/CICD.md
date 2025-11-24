@@ -26,12 +26,13 @@ CollabNote uses GitHub Actions for Continuous Integration and Deployment.
   - Deploys Edge Functions.
 
 ### 4. Deploy to Vercel (`deploy-vercel.yml`)
-- **Triggers**: Push to `main`.
+- **Triggers**: Manual Dispatch only (`workflow_dispatch`).
 - **Actions**:
   - Installs Vercel CLI.
   - Pulls environment info.
   - Builds project artifacts.
   - Deploys to Vercel Production.
+- **Note**: Vercel automatically deploys on push to `main` via GitHub integration. This workflow is for manual deployments when needed.
 
 ## 🔑 Setup Secrets
 

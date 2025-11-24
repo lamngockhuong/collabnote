@@ -1,9 +1,6 @@
 name: Deploy to Vercel
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 env:
@@ -13,6 +10,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Production
     steps:
       - uses: actions/checkout@v4
 
