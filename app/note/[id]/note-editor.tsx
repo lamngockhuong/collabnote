@@ -13,8 +13,12 @@ import {
   Sparkles,
   Globe,
   Lock,
-  Database
+  Database,
+  Eye,
+  Edit3
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { useConfirm } from '@/lib/use-confirm'
 
@@ -52,6 +56,12 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const { confirm, ConfirmDialog } = useConfirm()
   const channelRef = useRef<RealtimeChannel | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const titleRef = useRef(initialNote.title)
+
+  const contentRef = useRef(initialNote.content || '')
+
+  const isOwner = user.id === note.owner_id
+  const [isPreview, setIsPreview] = useState(true)
 
   useEffect(() => {
     // Subscribe to note changes
@@ -70,6 +80,8 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
           setNote(updated)
           setTitle(updated.title)
           setContent(updated.content || '')
+          titleRef.current = updated.title
+          contentRef.current = updated.content || ''
         }
       )
       .on('presence', { event: 'sync' }, () => {
@@ -101,19 +113,22 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   }, [note.id, supabase, user.id, user.email])
 
   const saveNote = async () => {
+    if (!isOwner) return
     setSaving(true)
     await supabase
       .from('notes')
       .update({
-        title,
-        content,
+        title: titleRef.current,
+        content: contentRef.current,
       })
       .eq('id', note.id)
     setSaving(false)
   }
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value)
+    const newContent = e.target.value
+    setContent(newContent)
+    contentRef.current = newContent
 
     // Auto-save after 1 second of inactivity
     if (saveTimeoutRef.current) {
@@ -121,18 +136,20 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
     }
     saveTimeoutRef.current = setTimeout(() => {
       saveNote()
-    }, 1000)
+    }, 500)
   }
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value)
+    const newTitle = e.target.value
+    setTitle(newTitle)
+    titleRef.current = newTitle
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
     }
     saveTimeoutRef.current = setTimeout(() => {
       saveNote()
-    }, 1000)
+    }, 500)
   }
 
   const handleDelete = async () => {
@@ -190,7 +207,9 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
         .from('note-images')
         .getPublicUrl(data.path)
 
-      setContent((prev) => prev + `\n\n![Image](${publicUrl})\n`)
+      const newContent = contentRef.current + `\n\n![Image](${publicUrl})\n`
+      setContent(newContent)
+      contentRef.current = newContent
       saveNote()
     }
 
@@ -207,7 +226,9 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       if (error) throw error
 
       const summaryText = `\n\n---\n${data.summary}\n`
-      setContent((prev) => prev + summaryText)
+      const newContent = contentRef.current + summaryText
+      setContent(newContent)
+      contentRef.current = newContent
       saveNote()
     } catch (error) {
       console.error('Error summarizing note:', error)
@@ -251,9 +272,16 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                 type="text"
                 value={title}
                 onChange={handleTitleChange}
-                className="text-xl font-semibold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-2 py-1"
+                onBlur={isOwner ? saveNote : undefined}
+                readOnly={!isOwner}
+                className={`text-xl font-semibold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-2 py-1 ${!isOwner ? 'cursor-default focus:ring-0' : ''}`}
                 placeholder="Note title..."
               />
+              {!isOwner && (
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
+                  View Only
+                </span>
+              )}
               {saving && (
                 <span className="text-sm text-gray-500">Saving...</span>
               )}
@@ -270,68 +298,91 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
 
               <div className="h-6 w-px bg-gray-200 mx-2" />
 
-              {/* Media */}
-              <label className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition cursor-pointer" title="Upload Image">
-                <Upload className="w-5 h-5" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-              </label>
-
-              {/* AI Tools Group */}
-              <div className="flex items-center bg-gray-50 rounded-lg p-1">
-                <button
-                  onClick={summarizeNote}
-                  disabled={summarizing}
-                  className="p-2 text-gray-500 hover:bg-white hover:text-indigo-600 rounded-md transition disabled:opacity-50"
-                  title="AI Summarize"
-                >
-                  <Sparkles className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleGenerateEmbedding}
-                  className="p-2 text-gray-500 hover:bg-white hover:text-blue-600 rounded-md transition"
-                  title="Index for Search"
-                >
-                  <Database className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="h-6 w-px bg-gray-200 mx-2" />
-
-              {/* Actions */}
+              {/* View Toggle */}
               <button
-                onClick={togglePublic}
+                onClick={() => setIsPreview(!isPreview)}
                 className={`p-2 rounded-lg transition ${
-                  note.is_public
-                    ? 'bg-green-100 text-green-700'
+                  isPreview
+                    ? 'bg-indigo-100 text-indigo-700'
                     : 'text-gray-500 hover:bg-gray-100'
                 }`}
-                title={note.is_public ? "Public Note" : "Private Note"}
+                title={isPreview ? "Switch to Edit Mode" : "Switch to Preview Mode"}
               >
-                {note.is_public ? <Globe className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                {isPreview ? <Edit3 className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
 
-              <button
-                onClick={saveNote}
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
-              >
-                <Save className="w-4 h-4" />
-                <span className="hidden sm:inline">Save</span>
-              </button>
+              {isOwner && <div className="h-6 w-px bg-gray-200 mx-2" />}
 
-              <button
-                onClick={handleDelete}
-                className="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition"
-                title="Delete Note"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              {/* Media */}
+              {isOwner && (
+                <label className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition cursor-pointer" title="Upload Image">
+                  <Upload className="w-5 h-5" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
+              )}
+
+              {/* AI Tools Group */}
+              {isOwner && (
+                <div className="flex items-center bg-gray-50 rounded-lg p-1">
+                  <button
+                    onClick={summarizeNote}
+                    disabled={summarizing}
+                    className="p-2 text-gray-500 hover:bg-white hover:text-indigo-600 rounded-md transition disabled:opacity-50"
+                    title="AI Summarize"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleGenerateEmbedding}
+                    className="p-2 text-gray-500 hover:bg-white hover:text-blue-600 rounded-md transition"
+                    title="Index for Search"
+                  >
+                    <Database className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {isOwner && <div className="h-6 w-px bg-gray-200 mx-2" />}
+
+              {/* Actions */}
+              {isOwner && (
+                <>
+                  <button
+                    onClick={togglePublic}
+                    className={`p-2 rounded-lg transition ${
+                      note.is_public
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                    title={note.is_public ? "Public Note" : "Private Note"}
+                  >
+                    {note.is_public ? <Globe className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                  </button>
+
+                  <button
+                    onClick={saveNote}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 shadow-sm"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span className="hidden sm:inline">Save</span>
+                  </button>
+
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition"
+                    title="Delete Note"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -340,12 +391,22 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       {/* Editor */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <textarea
-            value={content}
-            onChange={handleContentChange}
-            className="w-full min-h-[600px] text-gray-800 text-lg leading-relaxed resize-none focus:outline-none"
-            placeholder="Start writing your note..."
-          />
+          {isPreview ? (
+            <div className="prose prose-lg max-w-none min-h-[600px]">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              value={content}
+              onChange={handleContentChange}
+              onBlur={isOwner ? saveNote : undefined}
+              readOnly={!isOwner}
+              className={`w-full min-h-[600px] text-gray-800 text-lg leading-relaxed resize-none focus:outline-none ${!isOwner ? 'cursor-default' : ''}`}
+              placeholder={isOwner ? "Start writing your note..." : "This note is read-only."}
+            />
+          )}
         </div>
 
         {/* Online Users List */}
