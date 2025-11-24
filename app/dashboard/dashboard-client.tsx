@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { User } from '@supabase/supabase-js'
-import { PlusCircle, FileText, LogOut, Search, User as UserIcon } from 'lucide-react'
+import { PlusCircle, FileText, LogOut, Search, User as UserIcon, MoreVertical, Loader2 } from 'lucide-react'
 
 interface Note {
   id: string
@@ -19,11 +19,14 @@ interface Note {
 interface Props {
   initialNotes: Note[]
   user: User
+  totalNotes: number
 }
 
-export default function DashboardClient({ initialNotes, user }: Props) {
+export default function DashboardClient({ initialNotes, user, totalNotes }: Props) {
   const [notes, setNotes] = useState<Note[]>(initialNotes)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -60,24 +63,21 @@ export default function DashboardClient({ initialNotes, user }: Props) {
     }
   }, [supabase, user.id])
 
-  const createNote = async () => {
-    console.log('Creating note for user:', user.id)
-    const { data, error } = await supabase
-      .from('notes')
-      .insert({
-        title: 'Untitled Note',
-        owner_id: user.id,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating note:', error)
-      alert(`Error: ${error.message}`)
-    } else if (data) {
-      console.log('Note created:', data)
-      router.push(`/note/${data.id}`)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
     }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  const createNote = async () => {
+    router.push('/note/new')
   }
 
   const handleLogout = async () => {
@@ -112,6 +112,73 @@ export default function DashboardClient({ initialNotes, user }: Props) {
 
   const displayNotes = searchResults.length > 0 ? searchResults : filteredNotes
 
+  const [page, setPage] = useState(1)
+  const pageRef = useRef(1)
+  const [hasMore, setHasMore] = useState(initialNotes.length === 9)
+  const hasMoreRef = useRef(initialNotes.length === 9)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const loadingRef = useRef(false)
+  const loader = useRef(null)
+
+  const loadMore = useCallback(async () => {
+    if (loadingRef.current || !hasMoreRef.current) {
+      return
+    }
+
+    loadingRef.current = true
+    setLoadingMore(true)
+
+    const currentPage = pageRef.current
+    const from = currentPage * 9
+    const to = from + 8
+
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .range(from, to)
+      .eq('owner_id', user.id)
+
+    if (error) {
+      console.error('Error loading more notes:', error)
+    } else if (data) {
+      setNotes((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id))
+        const newNotes = data.filter((n) => !existingIds.has(n.id))
+        return [...prev, ...newNotes]
+      })
+      pageRef.current = currentPage + 1
+      setPage(currentPage + 1)
+      if (data.length < 9) {
+        hasMoreRef.current = false
+        setHasMore(false)
+      }
+    }
+    loadingRef.current = false
+    setLoadingMore(false)
+  }, [supabase, user.id])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreRef.current && !loadingRef.current) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (loader.current) {
+      observer.observe(loader.current)
+    }
+
+    return () => {
+      if (loader.current) {
+        observer.unobserve(loader.current)
+      }
+    }
+  }, [loadMore])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Header */}
@@ -122,23 +189,67 @@ export default function DashboardClient({ initialNotes, user }: Props) {
               CollabNote
             </h1>
               <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 hidden sm:inline">
-                {user.email}
-              </span>
-              <button
-                onClick={() => router.push('/profile')}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-              >
-                <UserIcon className="w-4 h-4" />
-                Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
+              {/* Desktop Menu */}
+              <div className="hidden md:flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {user.email}
+                </span>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+
+              {/* Mobile Menu */}
+              <div className="md:hidden relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+
+                {showMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
+                    <div className="px-4 py-2 border-b border-gray-100 mb-1">
+                      <p className="text-xs text-gray-500 font-medium">Signed in as</p>
+                      <p className="text-sm text-gray-900 truncate">{user.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        router.push('/profile')
+                        setShowMenu(false)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+                    >
+                      <UserIcon className="w-4 h-4" />
+                      <span>Profile</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setShowMenu(false)
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -179,6 +290,21 @@ export default function DashboardClient({ initialNotes, user }: Props) {
           </button>
         </div>
 
+        {/* Note Count */}
+        <div className="mb-4">
+          <p className="text-sm text-gray-600">
+            {searchQuery ? (
+              searchResults.length > 0 ? (
+                <span>Found <span className="font-semibold text-indigo-600">{searchResults.length}</span> {searchResults.length === 1 ? 'note' : 'notes'}</span>
+              ) : (
+                <span>Showing <span className="font-semibold text-indigo-600">{filteredNotes.length}</span> of <span className="font-semibold">{totalNotes}</span> {totalNotes === 1 ? 'note' : 'notes'}</span>
+              )
+            ) : (
+              <span>Total: <span className="font-semibold text-indigo-600">{totalNotes}</span> {totalNotes === 1 ? 'note' : 'notes'}</span>
+            )}
+          </p>
+        </div>
+
         {/* Notes Grid */}
         {displayNotes.length === 0 ? (
           <div className="text-center py-16">
@@ -202,27 +328,38 @@ export default function DashboardClient({ initialNotes, user }: Props) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayNotes.map((note) => (
-              <div
-                key={note.id}
-                onClick={() => router.push(`/note/${note.id}`)}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-xl transition-all cursor-pointer border border-gray-100 hover:border-indigo-200 group"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition">
-                  {note.title}
-                </h3>
-                <p className="text-sm text-gray-500">
-                   {note.similarity ? `Similarity: ${(note.similarity * 100).toFixed(1)}%` : `Updated ${new Date(note.updated_at || Date.now()).toLocaleDateString()}`}
-                </p>
-                {note.is_public && (
-                  <span className="inline-block mt-3 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                    Public
-                  </span>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayNotes.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => router.push(`/note/${note.id}`)}
+                  className="bg-white rounded-xl p-6 shadow-sm hover:shadow-xl transition-all cursor-pointer border border-gray-100 hover:border-indigo-200 group"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition">
+                    {note.title}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                     {note.similarity ? `Similarity: ${(note.similarity * 100).toFixed(1)}%` : `Updated ${new Date(note.updated_at || Date.now()).toLocaleDateString()}`}
+                  </p>
+                  {note.is_public && (
+                    <span className="inline-block mt-3 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                      Public
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Infinite Scroll Loader */}
+            {!searchQuery && hasMore && (
+              <div ref={loader} className="mt-8 flex justify-center py-4">
+                {loadingMore && (
+                  <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
                 )}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </main>
     </div>

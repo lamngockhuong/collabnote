@@ -26,7 +26,8 @@ import {
   Heading2,
   Heading3,
   Strikethrough,
-  ListTodo
+  ListTodo,
+  MoreVertical
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -46,6 +47,7 @@ interface Note {
 interface Props {
   note: Note
   user: User
+  isNew?: boolean
 }
 
 interface PresenceState {
@@ -54,7 +56,7 @@ interface PresenceState {
   online_at: string
 }
 
-export default function NoteEditor({ note: initialNote, user }: Props) {
+export default function NoteEditor({ note: initialNote, user, isNew = false }: Props) {
   const [note, setNote] = useState(initialNote)
   const [title, setTitle] = useState(initialNote.title)
   const [content, setContent] = useState(initialNote.content || '')
@@ -62,6 +64,7 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([])
   const [uploading, setUploading] = useState(false)
   const [summarizing, setSummarizing] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const router = useRouter()
   const supabase = createClient()
   const { confirm, ConfirmDialog } = useConfirm()
@@ -71,9 +74,23 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const titleRef = useRef(initialNote.title)
   const contentRef = useRef(initialNote.content || '')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const isOwner = user.id === note.owner_id
   const [isPreview, setIsPreview] = useState(true)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   useEffect(() => {
     // Subscribe to note changes
@@ -127,13 +144,23 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const saveNote = async () => {
     if (!isOwner) return
     setSaving(true)
-    await supabase
+
+    const { error } = await supabase
       .from('notes')
-      .update({
+      .upsert({
+        id: note.id,
         title: titleRef.current,
         content: contentRef.current,
+        owner_id: user.id,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', note.id)
+      .select()
+      .single()
+
+    if (!error && isNew && window.location.pathname === '/note/new') {
+       window.history.replaceState(null, '', `/note/${note.id}`)
+    }
+
     setSaving(false)
   }
 
@@ -320,10 +347,10 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                className="p-2 hover:bg-gray-100 rounded-lg transition shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -333,20 +360,20 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                 onChange={handleTitleChange}
                 onBlur={isOwner ? saveNote : undefined}
                 readOnly={!isOwner}
-                className={`text-xl font-semibold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-2 py-1 ${!isOwner ? 'cursor-default focus:ring-0' : ''}`}
+                className={`text-xl font-semibold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-2 py-1 w-full min-w-0 ${!isOwner ? 'cursor-default focus:ring-0' : ''}`}
                 placeholder="Note title..."
               />
               {!isOwner && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
+                <span className="hidden sm:inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200 shrink-0">
                   View Only
                 </span>
               )}
               {saving && (
-                <span className="text-sm text-gray-500">Saving...</span>
+                <span className="hidden sm:inline text-sm text-gray-500 shrink-0">Saving...</span>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-2 shrink-0">
               {/* Online Users */}
               {onlineUsers.length > 0 && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm">
@@ -354,8 +381,6 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                   <span>{onlineUsers.length} online</span>
                 </div>
               )}
-
-              <div className="h-6 w-px bg-gray-200 mx-2" />
 
               {/* View Toggle */}
               <button
@@ -370,60 +395,8 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                 {isPreview ? <Edit3 className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
 
-              {isOwner && <div className="h-6 w-px bg-gray-200 mx-2" />}
-
-              {/* Media */}
-              {isOwner && (
-                <label className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition cursor-pointer" title="Upload Image">
-                  <Upload className="w-5 h-5" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                </label>
-              )}
-
-              {/* AI Tools Group */}
-              {isOwner && (
-                <div className="flex items-center bg-gray-50 rounded-lg p-1">
-                  <button
-                    onClick={summarizeNote}
-                    disabled={summarizing}
-                    className="p-2 text-gray-500 hover:bg-white hover:text-indigo-600 rounded-md transition disabled:opacity-50"
-                    title="AI Summarize"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={handleGenerateEmbedding}
-                    className="p-2 text-gray-500 hover:bg-white hover:text-blue-600 rounded-md transition"
-                    title="Index for Search"
-                  >
-                    <Database className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-
-              {isOwner && <div className="h-6 w-px bg-gray-200 mx-2" />}
-
-              {/* Actions */}
               {isOwner && (
                 <>
-                  <button
-                    onClick={togglePublic}
-                    className={`p-2 rounded-lg transition ${
-                      note.is_public
-                        ? 'bg-green-100 text-green-700'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
-                    title={note.is_public ? "Public Note" : "Private Note"}
-                  >
-                    {note.is_public ? <Globe className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-                  </button>
-
                   <button
                     onClick={saveNote}
                     disabled={saving}
@@ -433,13 +406,82 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
                     <span className="hidden sm:inline">Save</span>
                   </button>
 
-                  <button
-                    onClick={handleDelete}
-                    className="p-2 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition"
-                    title="Delete Note"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setShowMenu(!showMenu)}
+                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+
+                    {showMenu && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-20">
+                        <label className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition">
+                          <Upload className="w-4 h-4" />
+                          <span>Upload Image</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              handleImageUpload(e)
+                              setShowMenu(false)
+                            }}
+                            className="hidden"
+                            disabled={uploading}
+                          />
+                        </label>
+
+                        <button
+                          onClick={() => {
+                            summarizeNote()
+                            setShowMenu(false)
+                          }}
+                          disabled={summarizing}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 text-left"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Summarize with AI</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            handleGenerateEmbedding()
+                            setShowMenu(false)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+                        >
+                          <Database className="w-4 h-4" />
+                          <span>Index for Search</span>
+                        </button>
+
+                        <div className="my-1 border-t border-gray-100" />
+
+                        <button
+                          onClick={() => {
+                            togglePublic()
+                            setShowMenu(false)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+                        >
+                          {note.is_public ? <Globe className="w-4 h-4 text-green-600" /> : <Lock className="w-4 h-4" />}
+                          <span>{note.is_public ? 'Public Note' : 'Private Note'}</span>
+                        </button>
+
+                        <div className="my-1 border-t border-gray-100" />
+
+                        <button
+                          onClick={() => {
+                            handleDelete()
+                            setShowMenu(false)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition text-left"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete Note</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
@@ -451,7 +493,7 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           {isPreview ? (
-            <div className="prose prose-lg max-w-none min-h-[600px]">
+            <div className="prose prose-lg max-w-none min-h-[600px] break-words">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
               </ReactMarkdown>
