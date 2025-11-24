@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { FileText, Zap, Shield, Users, Database, Cloud } from 'lucide-react'
 import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -13,7 +15,17 @@ export const metadata: Metadata = {
 }
 
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect('/dashboard')
+  }
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
