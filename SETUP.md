@@ -54,7 +54,46 @@ Dashboard → Storage → Create bucket `note-images` (Public)
 
 Then run the storage policies from `supabase/README.md`
 
-### 6. Run the App
+### 6. Configure OAuth Providers (Optional)
+
+The app supports GitHub and Google OAuth. To enable them:
+
+#### GitHub OAuth
+
+1. **Create GitHub OAuth App**:
+   - Go to GitHub Settings → Developer settings → OAuth Apps → New OAuth App
+   - **Application name**: CollabNote
+   - **Homepage URL**: `http://localhost:3000` (for development)
+   - **Authorization callback URL**: `https://your-project.supabase.co/auth/v1/callback`
+   - Click **Register application**
+   - Copy the **Client ID** and generate a **Client Secret**
+
+2. **Configure in Supabase**:
+   - Go to Supabase Dashboard → Authentication → Providers
+   - Find **GitHub** and enable it
+   - Paste your **Client ID** and **Client Secret**
+   - Click **Save**
+
+#### Google OAuth
+
+1. **Create Google OAuth Credentials**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+   - Navigate to APIs & Services → Credentials
+   - Click **Create Credentials** → **OAuth client ID**
+   - Application type: **Web application**
+   - **Authorized redirect URIs**: `https://your-project.supabase.co/auth/v1/callback`
+   - Copy the **Client ID** and **Client Secret**
+
+2. **Configure in Supabase**:
+   - Go to Supabase Dashboard → Authentication → Providers
+   - Find **Google** and enable it
+   - Paste your **Client ID** and **Client Secret**
+   - Click **Save**
+
+> **Note**: For production, update the callback URLs to use your production domain.
+
+### 7. Run the App
 
 ```bash
 pnpm dev

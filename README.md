@@ -10,7 +10,7 @@
 
 **A powerful realtime collaborative note-taking app showcasing the complete Supabase ecosystem**
 
-[Live Demo](#) • [Documentation](./docs/) • [Report Bug](https://github.com/lamngockhuong/collabnote/issues) • [Request Feature](https://github.com/lamngockhuong/collabnote/issues)
+[Documentation](./docs/) • [Report Bug](https://github.com/lamngockhuong/collabnote/issues) • [Request Feature](https://github.com/lamngockhuong/collabnote/issues)
 
 </div>
 
