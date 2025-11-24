@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "./service-worker-registration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,11 +65,12 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#4f46e5" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
