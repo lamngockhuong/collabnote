@@ -15,7 +15,18 @@ import {
   Lock,
   Database,
   Eye,
-  Edit3
+  Edit3,
+  Bold,
+  Italic,
+  List,
+  Link as LinkIcon,
+  Code,
+  Quote,
+  Heading1,
+  Heading2,
+  Heading3,
+  Strikethrough,
+  ListTodo
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -56,9 +67,10 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
   const { confirm, ConfirmDialog } = useConfirm()
   const channelRef = useRef<RealtimeChannel | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const titleRef = useRef(initialNote.title)
 
+  const titleRef = useRef(initialNote.title)
   const contentRef = useRef(initialNote.content || '')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const isOwner = user.id === note.owner_id
   const [isPreview, setIsPreview] = useState(true)
@@ -255,6 +267,53 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
     }
   }
 
+  const insertMarkdown = (prefix: string, suffix: string = '') => {
+    if (!textareaRef.current) return
+
+    const textarea = textareaRef.current
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const text = textarea.value
+
+    const before = text.substring(0, start)
+    const selection = text.substring(start, end)
+    const after = text.substring(end)
+
+    let newText = ''
+    let newStart = start
+    let newEnd = end
+
+    // Check if already formatted (surrounding selection)
+    if (before.endsWith(prefix) && after.startsWith(suffix)) {
+      newText = before.slice(0, -prefix.length) + selection + after.slice(suffix.length)
+      newStart = start - prefix.length
+      newEnd = end - prefix.length
+    }
+    // Check if already formatted (inside selection)
+    else if (selection.startsWith(prefix) && selection.endsWith(suffix)) {
+      newText = before + selection.slice(prefix.length, -suffix.length) + after
+      newStart = start
+      newEnd = end - (prefix.length + suffix.length)
+    }
+    // Apply formatting
+    else {
+      newText = before + prefix + selection + suffix + after
+      newStart = start + prefix.length
+      newEnd = end + prefix.length
+    }
+
+    setContent(newText)
+    contentRef.current = newText
+
+    // Restore focus and selection
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newStart, newEnd)
+    }, 0)
+
+    saveNote()
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Header */}
@@ -398,14 +457,101 @@ export default function NoteEditor({ note: initialNote, user }: Props) {
               </ReactMarkdown>
             </div>
           ) : (
-            <textarea
-              value={content}
-              onChange={handleContentChange}
-              onBlur={isOwner ? saveNote : undefined}
-              readOnly={!isOwner}
-              className={`w-full min-h-[600px] text-gray-800 text-lg leading-relaxed resize-none focus:outline-none ${!isOwner ? 'cursor-default' : ''}`}
-              placeholder={isOwner ? "Start writing your note..." : "This note is read-only."}
-            />
+            <div className="flex flex-col h-full">
+              {isOwner && (
+                <div className="flex items-center gap-1 mb-4 p-2 bg-gray-50 rounded-lg border border-gray-200 w-fit flex-wrap">
+                  <button
+                    onClick={() => insertMarkdown('# ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Heading 1"
+                  >
+                    <Heading1 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('## ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Heading 2"
+                  >
+                    <Heading2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('### ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Heading 3"
+                  >
+                    <Heading3 className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1" />
+                  <button
+                    onClick={() => insertMarkdown('**', '**')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Bold"
+                  >
+                    <Bold className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('*', '*')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Italic"
+                  >
+                    <Italic className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('~~', '~~')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Strikethrough"
+                  >
+                    <Strikethrough className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1" />
+                  <button
+                    onClick={() => insertMarkdown('- ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="List"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('- [ ] ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Checklist"
+                  >
+                    <ListTodo className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('> ')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Quote"
+                  >
+                    <Quote className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1" />
+                  <button
+                    onClick={() => insertMarkdown('`', '`')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Code"
+                  >
+                    <Code className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => insertMarkdown('[', '](url)')}
+                    className="p-2 text-gray-600 hover:bg-white hover:text-indigo-600 rounded transition"
+                    title="Link"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={handleContentChange}
+                onBlur={isOwner ? saveNote : undefined}
+                readOnly={!isOwner}
+                className={`w-full min-h-[600px] text-gray-800 text-lg leading-relaxed resize-none focus:outline-none ${!isOwner ? 'cursor-default' : ''}`}
+                placeholder={isOwner ? "Start writing your note..." : "This note is read-only."}
+              />
+            </div>
           )}
         </div>
 
