@@ -18,6 +18,12 @@ export default async function DashboardPage() {
     .from('notes')
     .select('*')
     .order('updated_at', { ascending: false })
+    .limit(9)
 
-  return <DashboardClient initialNotes={notes || []} user={user} />
+  const { count } = await supabase
+    .from('notes')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', user.id)
+
+  return <DashboardClient initialNotes={notes || []} user={user} totalNotes={count || 0} />
 }

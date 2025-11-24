@@ -43,6 +43,7 @@ We will design a schema that requires robust security policies.
     - Email/Password Sign up & Login.
     - GitHub OAuth (Social Login).
     - **Middleware**: Protect `/dashboard` routes using Next.js Middleware + Supabase Auth Helpers.
+    - **Server-Side Redirects**: Authenticated users are automatically redirected to `/dashboard` from landing/auth pages using Server Components.
 
 ### 3. Realtime Collaboration (Supabase Realtime)
 This is the "Wow" factor.
@@ -58,6 +59,12 @@ This is the "Wow" factor.
 - **Function**: `summarize-note`.
 - **Logic**: Receives note content -> Calls OpenAI API (or mock) -> Returns summary.
 - **Trigger**: User clicks "Summarize with AI" button in the UI.
+
+### 6. UI/UX Enhancements
+- **Footer**: Global footer with social links and legal pages.
+- **Legal Pages**: Privacy Policy and Terms of Service (`/privacy`, `/terms`).
+- **Loading States**: Skeleton UI (`loading.tsx`) for improved perceived performance.
+- **Markdown Editor**: Rich text editing with formatting toolbar and preview mode.
 
 ## Implementation Phases
 
@@ -90,6 +97,21 @@ This is the "Wow" factor.
 - [x] **Storage & Edge Functions**:
     - [x] Implement Image Upload.
     - [x] Deploy `summarize-note` Edge Function.
+
+### Phase 5: UI/UX Improvements
+- [x] **Mobile Responsiveness**:
+    - [x] Responsive dropdown menus for note editor toolbar
+    - [x] Responsive dashboard header menu
+    - [x] Mobile-optimized layouts and touch-friendly interfaces
+- [x] **Pagination & Performance**:
+    - [x] Infinite scroll for dashboard with Intersection Observer
+    - [x] Efficient pagination using refs to prevent stale closures
+    - [x] Note count display (total and filtered)
+- [x] **User Experience**:
+    - [x] Deferred note creation (only save when content changes)
+    - [x] Text overflow handling with word wrapping
+    - [x] Loading states and skeleton UI
+    - [x] Click-outside-to-close for dropdown menus
 
 ## Verification Plan
 

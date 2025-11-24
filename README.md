@@ -27,7 +27,10 @@ CollabNote is a **production-ready** collaborative note-taking application that 
 - 🔒 **Secure** - Row Level Security with automated tests
 - 🎨 **Beautiful UI** - Modern, responsive design with Tailwind CSS
 - 📱 **PWA Ready** - Installable as a progressive web app
+- 📝 **Rich Markdown** - Full Markdown support with formatting toolbar
 - 🚀 **SEO Optimized** - Full metadata, sitemap, and structured data
+- ♾️ **Infinite Scroll** - Smooth pagination with automatic loading
+- 📲 **Mobile Optimized** - Responsive menus and touch-friendly interface
 
 ## 🛠️ Tech Stack
 
@@ -45,6 +48,7 @@ This project is a **learning reference** to demonstrate every core Supabase feat
 - ✅ Session management with middleware
 - ✅ Protected routes
 - ✅ Auto-profile creation on signup
+- ✅ Server-side auth redirects (no flash)
 
 **Files**: `app/login/`, `app/signup/`, `middleware.ts`
 
