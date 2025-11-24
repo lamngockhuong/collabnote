@@ -62,3 +62,68 @@ You can choose between two methods:
 
 1.  **Automatic Integration (Recommended)**: Connect your GitHub repo to Vercel directly via the Vercel Dashboard. This is the easiest way and doesn't require the `deploy-vercel.yml` workflow.
 2.  **GitHub Actions (Custom)**: Use the provided `deploy-vercel.yml` workflow for more control. Requires setting the secrets above.
+
+## ⚙️ Vercel Configuration
+
+The project uses `vercel.json` to manage deployment configuration in version control. This ensures consistent settings across all environments.
+
+### Configuration Files
+
+- **`vercel.json`**: Main configuration file containing:
+  - Build commands and framework settings
+  - Security headers (X-Frame-Options, CSP, etc.)
+  - Region settings (optimized for Singapore - `sin1`)
+  - Environment variable references
+  - Rewrites and redirects
+
+- **`.vercelignore`**: Specifies files to exclude from deployment (similar to `.gitignore`)
+
+### Environment Variables
+
+> [!IMPORTANT]
+> Environment variables **CANNOT** be stored in `vercel.json` or any config files (this feature is deprecated). You **MUST** set them in the Vercel Dashboard.
+
+**Why?**
+- 🔒 **Security**: Sensitive data (API keys, secrets) should never be committed to Git
+- ✅ **Best Practice**: Vercel recommends managing env vars through their dashboard
+- 🔄 **Flexibility**: Easy to change without code commits
+
+**How to set environment variables:**
+
+1. **Go to Vercel Dashboard**
+   - Visit [vercel.com/dashboard](https://vercel.com/dashboard)
+   - Select your project (e.g., `collabnote`)
+
+2. **Navigate to Settings**
+   - Click **Settings** tab
+   - Click **Environment Variables** in the sidebar
+
+3. **Add variables** (one by one):
+
+   | Variable Name | Value | Where to get it |
+   |--------------|-------|-----------------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Supabase Project Settings → API → Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGc...` | Supabase Project Settings → API → `anon` `public` key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGc...` | Supabase Project Settings → API → `service_role` `secret` key |
+
+4. **Select Environments** for each variable:
+   - ✅ **Production** - For main branch deployments
+   - ✅ **Preview** - For pull request deployments
+   - ✅ **Development** - For local development (optional)
+
+5. **Click "Save"**
+
+**Notes:**
+- Variables starting with `NEXT_PUBLIC_` are exposed to the browser
+- `SUPABASE_SERVICE_ROLE_KEY` should **ONLY** be added to **Production** (never Preview/Development)
+- After adding variables, redeploy your project for changes to take effect
+
+### Per-Environment Configuration
+
+You can create environment-specific configuration files:
+
+- `vercel.production.json` - Production only
+- `vercel.preview.json` - Preview deployments only
+- `vercel.development.json` - Development only
+
+These files will override settings from the base `vercel.json` for their respective environments.
